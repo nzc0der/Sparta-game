@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Agoge: Spartan Training Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>THE AGOGE</h1>
+            <div id="stats-bar">
+                <span>Discipline: <span id="discipline">0</span></span>
+                <span>Strength: <span id="strength">0</span></span>
+                <span>Spirit: <span id="spirit">0</span></span>
+            </div>
+        </header>
+        <main id="game-screen">
+            <div id="mentor-box" style="display: none;">
+                <h3 id="mentor-name">Mentor</h3>
+                <p id="mentor-text"></p>
+            </div>
+            <div id="narrative-box">
+                <p id="text-display">Loading Agoge Training...</p>
+            </div>
+            <div id="choices-container">
+                <!-- Choices will be injected here -->
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 480 BC - Sparta Superior</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
