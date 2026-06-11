@@ -30,7 +30,6 @@ class Game {
     }
 
     resize() {
-        // Maintain aspect ratio or fill container
         const container = document.getElementById('canvas-container');
         this.canvas.width = container.clientWidth;
         this.canvas.height = container.clientHeight;
@@ -51,7 +50,6 @@ class Game {
     }
 
     updateUI() {
-        // Hide/Show DOM overlays based on state
         const overlays = ['menu-overlay', 'dialogue-overlay', 'result-overlay'];
         overlays.forEach(id => {
             const el = document.getElementById(id);
@@ -62,8 +60,6 @@ class Game {
             document.getElementById('menu-overlay').style.display = 'flex';
         } else if (this.state === 'DEBATE') {
             document.getElementById('dialogue-overlay').style.display = 'flex';
-        } else if (this.state === 'PHALANX') {
-            // Dialogue hidden automatically
         } else if (this.state === 'RESULT') {
             document.getElementById('result-overlay').style.display = 'flex';
             document.getElementById('result-text').innerText = this.resultText || "Your journey in the Agoge has concluded.";
@@ -82,15 +78,23 @@ class Game {
 
         switch (this.state) {
             case 'AGOGE':
-                if (this.agogeGame) this.agogeGame.update(deltaTime);
-                if (this.agogeGame) this.agogeGame.draw(this.ctx);
+                if (this.agogeGame) {
+                    this.agogeGame.update(deltaTime);
+                    this.agogeGame.draw(this.ctx);
+                }
                 break;
             case 'PHALANX':
-                if (this.phalanxGame) this.phalanxGame.update(deltaTime);
-                if (this.phalanxGame) this.phalanxGame.draw(this.ctx);
+                if (this.phalanxGame) {
+                    this.phalanxGame.update(deltaTime);
+                    this.phalanxGame.draw(this.ctx);
+                }
+                break;
+            case 'DEBATE':
+                if (this.debateGame) {
+                    this.debateGame.draw(this.ctx);
+                }
                 break;
             default:
-                // Background or Menu drawing if needed
                 this.drawBackground();
                 break;
         }
@@ -99,12 +103,9 @@ class Game {
     }
 
     drawBackground() {
-        // Simple themed background for the canvas
         const ctx = this.ctx;
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Decorative border
         ctx.strokeStyle = '#CD7F32';
         ctx.lineWidth = 10;
         ctx.strokeRect(5, 5, this.canvas.width - 10, this.canvas.height - 10);
@@ -117,107 +118,228 @@ class Game {
     }
 }
 
-class PhalanxGame {
+class AgogeGame {
     constructor(game) {
         this.game = game;
-        this.integrity = 100;
-        this.targets = [];
-        this.spawnTimer = 0;
-        this.duration = 15000;
-        this.elapsed = 0;
 
-        // Rhythm points
-        this.perfectZone = 50; // pixels from bottom
+        this.GRAVITY = 0.6;
+        this.FRICTION = 0.8;
+        this.JUMP_FORCE = -14;
+        this.MAX_SPEED = 6;
+        this.TILE_SIZE = 40;
+
+        this.player = {
+            x: 100,
+            y: 300,
+            vx: 0,
+            vy: 0,
+            width: 32,
+            height: 48,
+            grounded: false,
+            facing: 'right'
+        };
+
+        this.elapsed = 0;
+        this.duration = 30000;
+        this.keys = {};
+        this.particles = [];
+
+        window.addEventListener('keydown', (e) => this.keys[e.code] = true);
+        window.addEventListener('keyup', (e) => this.keys[e.code] = false);
+
+        this.level = this.generateLevel();
+    }
+
+    generateLevel() {
+        return [
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0,3,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+            [0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0],
+            [1,1,1,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
     }
 
     update(dt) {
         this.elapsed += dt;
+        this.updateParticles();
         if (this.elapsed >= this.duration) {
-            this.end();
+            this.game.setState('DEBATE');
             return;
         }
 
-        this.spawnTimer += dt;
-        if (this.spawnTimer > 1000) {
-            this.targets.push({
-                y: 0,
-                speed: 4
-            });
-            this.spawnTimer = 0;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) {
+            if (this.player.vx > -this.MAX_SPEED) this.player.vx--;
+            this.player.facing = 'left';
+        } else if (this.keys['KeyD'] || this.keys['ArrowRight']) {
+            if (this.player.vx < this.MAX_SPEED) this.player.vx++;
+            this.player.facing = 'right';
+        } else {
+            this.player.vx *= this.FRICTION;
         }
 
-        this.targets.forEach((t, i) => {
-            t.y += t.speed;
-            if (t.y > this.game.canvas.height) {
-                this.integrity -= 10;
-                this.targets.splice(i, 1);
+        if ((this.keys['KeyW'] || this.keys['ArrowUp'] || this.keys['Space']) && this.player.grounded) {
+            this.player.vy = this.JUMP_FORCE;
+            this.player.grounded = false;
+            this.createDust(this.player.x + 16, this.player.y + 48);
+        }
+
+        this.player.vy += this.GRAVITY;
+        this.player.x += this.player.vx;
+        this.player.y += this.player.vy;
+
+        this.checkCollisions();
+    }
+
+    checkCollisions() {
+        this.player.grounded = false;
+        for (let r = 0; r < this.level.length; r++) {
+            for (let c = 0; c < this.level[r].length; c++) {
+                const tile = this.level[r][c];
+                if (tile === 0) continue;
+                const tx = c * this.TILE_SIZE;
+                const ty = r * this.TILE_SIZE;
+
+                if (tile === 1) {
+                    this.resolveCollision(this.player, { x: tx, y: ty, width: this.TILE_SIZE, height: this.TILE_SIZE });
+                } else if (tile === 3 || tile === 4) {
+                    if (this.rectIntersect(this.player, { x: tx, y: ty, width: this.TILE_SIZE, height: this.TILE_SIZE })) {
+                        this.handleCollection(tile, r, c);
+                    }
+                }
             }
-        });
+        }
 
-        if (this.integrity <= 0) {
-            this.game.resultText = "The phalanx has broken. A Spartan never retreats, but today the line did not hold.";
-            this.game.setState('RESULT');
+        if (this.player.x < 0) this.player.x = 0;
+        if (this.player.x > (this.level[0].length * this.TILE_SIZE) - this.player.width) {
+            this.player.x = (this.level[0].length * this.TILE_SIZE) - this.player.width;
+        }
+        if (this.player.y > this.game.canvas.height) {
+            this.player.x = 100; this.player.y = 300; this.player.vy = 0;
         }
     }
 
-    handleInput() {
-        // Find target in perfect zone
-        const hitIndex = this.targets.findIndex(t =>
-            t.y > this.game.canvas.height - 100 && t.y < this.game.canvas.height - 20
-        );
+    resolveCollision(p, t) {
+        const dx = (p.x + p.width / 2) - (t.x + t.width / 2);
+        const dy = (p.y + p.height / 2) - (t.y + t.height / 2);
+        const width = (p.width + t.width) / 2;
+        const height = (p.height + t.height) / 2;
+        const crossWidth = width * dy;
+        const crossHeight = height * dx;
 
-        if (hitIndex !== -1) {
-            this.targets.splice(hitIndex, 1);
-            this.integrity = Math.min(100, this.integrity + 5);
-        } else {
-            this.integrity -= 5;
+        if (Math.abs(dx) <= width && Math.abs(dy) <= height) {
+            if (crossWidth > crossHeight) {
+                if (crossWidth > (-crossHeight)) { p.y = t.y + t.height; p.vy = 0; }
+                else { p.x = t.x - p.width; p.vx = 0; }
+            } else {
+                if (crossWidth > (-crossHeight)) { p.x = t.x + t.width; p.vx = 0; }
+                else { p.y = t.y - p.height; p.vy = 0; p.grounded = true; }
+            }
         }
     }
 
-    end() {
-        if (this.integrity > 50) {
-            this.game.resultText = "Victory! The Phalanx held firm. Athens sees our strength and trembles. You are a true Homoios of Sparta.";
-        } else {
-            this.game.resultText = "The line held, but barely. You must train harder in the Agoge.";
+    rectIntersect(r1, r2) {
+        return r1.x < r2.x + r2.width && r1.x + r1.width > r2.x && r1.y < r2.y + r2.height && r1.y + r1.height > r2.y;
+    }
+
+    handleCollection(tile, r, c) {
+        this.level[r][c] = 0;
+        if (tile === 3) { this.game.stats.strength += 10; this.game.stats.discipline += 5; }
+        else { this.game.stats.discipline -= 10; }
+        this.game.updateStats();
+    }
+
+    createDust(x, y) {
+        for (let i = 0; i < 5; i++) {
+            this.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                life: 1.0
+            });
         }
-        this.game.setState('RESULT');
+    }
+
+    updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= 0.05;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
     }
 
     draw(ctx) {
-        // Draw Phalanx Wall
-        ctx.fillStyle = '#8B0000';
-        ctx.fillRect(0, ctx.canvas.height - 60, ctx.canvas.width, 60);
+        // Parallax Background
+        const scrollX = this.player.x * 0.2;
+        ctx.fillStyle = '#1a0d00';
+        ctx.beginPath();
+        ctx.moveTo(-scrollX, this.game.canvas.height);
+        ctx.lineTo(200 - scrollX, this.game.canvas.height - 300);
+        ctx.lineTo(400 - scrollX, this.game.canvas.height);
+        ctx.lineTo(600 - scrollX, this.game.canvas.height - 250);
+        ctx.lineTo(800 - scrollX, this.game.canvas.height);
+        ctx.fill();
 
-        // Draw Shields
-        ctx.fillStyle = '#CD7F32';
-        for (let x = 20; x < ctx.canvas.width; x += 60) {
-            ctx.beginPath();
-            ctx.arc(x, ctx.canvas.height - 40, 25, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#FFD700';
-            ctx.stroke();
+        for (let r = 0; r < this.level.length; r++) {
+            for (let c = 0; c < this.level[r].length; c++) {
+                const tile = this.level[r][c];
+                const tx = c * this.TILE_SIZE;
+                const ty = r * this.TILE_SIZE;
+                if (tile === 1) {
+                    ctx.fillStyle = '#F5F5DC';
+                    ctx.fillRect(tx, ty, this.TILE_SIZE, this.TILE_SIZE);
+                    ctx.strokeStyle = '#CD7F32';
+                    ctx.strokeRect(tx + 2, ty + 2, this.TILE_SIZE - 4, this.TILE_SIZE - 4);
+                } else if (tile === 3) { this.drawShield(ctx, tx + 20, ty + 20); }
+                else if (tile === 4) { this.drawCake(ctx, tx + 20, ty + 20); }
+            }
         }
+        this.drawPlayer(ctx);
 
-        // Draw Targets (Persian arrows or Athenian spears)
-        ctx.fillStyle = '#F5F5DC';
-        this.targets.forEach(t => {
-            ctx.fillRect(ctx.canvas.width / 2 - 2, t.y, 4, 30);
+        // Draw Particles
+        ctx.fillStyle = 'rgba(245, 245, 220, 0.5)';
+        this.particles.forEach(p => {
+            ctx.beginPath(); ctx.arc(p.x, p.y, 2 * p.life, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Draw UI
         ctx.fillStyle = '#F5F5DC';
-        ctx.font = '20px Georgia';
-        ctx.fillText(`PHALANX INTEGRITY: ${this.integrity}%`, 20, 40);
-        ctx.fillText("SPACE TO HOLD THE LINE", ctx.canvas.width / 2 - 100, ctx.canvas.height - 80);
+        ctx.font = 'bold 20px Georgia';
+        ctx.fillText(`AGOGE: ${Math.ceil((this.duration - this.elapsed) / 1000)}s`, 20, 40);
+    }
+
+    drawPlayer(ctx) {
+        const p = this.player;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        if (p.facing === 'left') { ctx.scale(-1, 1); ctx.translate(-p.width, 0); }
+        ctx.fillStyle = '#CD7F32'; ctx.fillRect(5, 10, 22, 38);
+        ctx.fillStyle = '#CD7F32'; ctx.fillRect(5, 0, 22, 15);
+        ctx.fillStyle = '#8B0000'; ctx.beginPath(); ctx.moveTo(5, 0); ctx.quadraticCurveTo(16, -15, 27, 0); ctx.fill();
+        ctx.fillStyle = '#8B0000'; ctx.fillRect(0, 10, 5, 30);
+        ctx.restore();
+    }
+
+    drawShield(ctx, x, y) {
+        ctx.fillStyle = '#CD7F32'; ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x - 5, y + 5); ctx.lineTo(x, y - 5); ctx.lineTo(x + 5, y + 5); ctx.stroke();
+    }
+
+    drawCake(ctx, x, y) {
+        ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.moveTo(x - 10, y + 10); ctx.lineTo(x + 10, y + 10); ctx.lineTo(x, y - 10); ctx.closePath(); ctx.fill();
     }
 }
 
 class DebateGame {
     constructor(game) {
         this.game = game;
-        this.influence = 50; // Start at 50%
+        this.influence = 50;
         this.currentScenario = 0;
-
         this.scenarios = [
             {
                 text: "An Athenian sophist mocks our 'Black Broth', saying it's fit only for pigs. How do you defend our ways?",
@@ -243,7 +365,6 @@ class DebateGame {
                 ]
             }
         ];
-
         this.init();
     }
 
@@ -254,15 +375,10 @@ class DebateGame {
 
     showScenario() {
         const scenario = this.scenarios[this.currentScenario];
-        if (!scenario) {
-            this.end();
-            return;
-        }
-
+        if (!scenario) { this.end(); return; }
         document.getElementById('narrative-text').innerText = scenario.text;
         const container = document.getElementById('choices-container');
         container.innerHTML = '';
-
         scenario.choices.forEach(choice => {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
@@ -270,7 +386,6 @@ class DebateGame {
             btn.onclick = () => this.handleChoice(choice);
             container.appendChild(btn);
         });
-
         this.updateMeter();
     }
 
@@ -281,9 +396,7 @@ class DebateGame {
         this.showScenario();
     }
 
-    updateMeter() {
-        document.getElementById('influence-bar').style.width = `${this.influence}%`;
-    }
+    updateMeter() { document.getElementById('influence-bar').style.width = `${this.influence}%`; }
 
     end() {
         document.getElementById('influence-meter-container').style.display = 'none';
@@ -298,145 +411,68 @@ class DebateGame {
     }
 
     draw(ctx) {
-        // Draw Debate Scene Background
-        ctx.fillStyle = '#222';
-        ctx.fillRect(0, 0, this.game.canvas.width, this.game.canvas.height);
-
-        // Athenian vs Spartan Silhouettes
-        ctx.fillStyle = '#444'; // Athenian
-        ctx.fillRect(100, 200, 100, 300);
-        ctx.fillStyle = '#8B0000'; // Spartan
-        ctx.fillRect(this.game.canvas.width - 200, 200, 100, 300);
+        ctx.fillStyle = '#222'; ctx.fillRect(0, 0, this.game.canvas.width, this.game.canvas.height);
+        ctx.fillStyle = '#444'; ctx.fillRect(100, 200, 100, 300);
+        ctx.fillStyle = '#8B0000'; ctx.fillRect(this.game.canvas.width - 200, 200, 100, 300);
     }
 }
 
-class AgogeGame {
+class PhalanxGame {
     constructor(game) {
         this.game = game;
-        this.player = {
-            x: game.canvas.width / 2,
-            y: game.canvas.height - 100,
-            width: 40,
-            height: 60,
-            speed: 5
-        };
-        this.items = [];
+        this.integrity = 100;
+        this.targets = [];
         this.spawnTimer = 0;
-        this.score = 0;
-        this.duration = 15000; // 15 seconds of training
+        this.duration = 15000;
         this.elapsed = 0;
-        this.keys = {};
-
-        window.addEventListener('keydown', (e) => this.keys[e.code] = true);
-        window.addEventListener('keyup', (e) => this.keys[e.code] = false);
     }
 
     update(dt) {
         this.elapsed += dt;
-        if (this.elapsed >= this.duration) {
-            this.game.setState('DEBATE');
-            return;
-        }
-
-        // Move Player
-        if (this.keys['ArrowLeft'] && this.player.x > 0) this.player.x -= this.player.speed;
-        if (this.keys['ArrowRight'] && this.player.x < this.game.canvas.width - this.player.width) this.player.x += this.player.speed;
-
-        // Spawn Items
+        if (this.elapsed >= this.duration) { this.end(); return; }
         this.spawnTimer += dt;
-        if (this.spawnTimer > 800) {
-            this.spawnItem();
-            this.spawnTimer = 0;
+        if (this.spawnTimer > 1000) { this.targets.push({ y: 0, speed: 4 }); this.spawnTimer = 0; }
+        this.targets.forEach((t, i) => {
+            t.y += t.speed;
+            if (t.y > this.game.canvas.height) { this.integrity -= 10; this.targets.splice(i, 1); }
+        });
+        if (this.integrity <= 0) {
+            this.game.resultText = "The phalanx has broken. A Spartan never retreats, but today the line did not hold.";
+            this.game.setState('RESULT');
         }
-
-        // Update Items
-        this.items.forEach((item, index) => {
-            item.y += item.speed;
-
-            // Collision detection
-            if (this.checkCollision(this.player, item)) {
-                this.handleCollision(item);
-                this.items.splice(index, 1);
-            } else if (item.y > this.game.canvas.height) {
-                this.items.splice(index, 1);
-            }
-        });
     }
 
-    spawnItem() {
-        const types = [
-            { name: 'shield', color: '#CD7F32', value: 5, type: 'good' },
-            { name: 'broth', color: '#1a1a1a', value: 3, type: 'good' },
-            { name: 'cake', color: '#FFD700', value: -5, type: 'bad' },
-            { name: 'silk', color: '#DA70D6', value: -3, type: 'bad' }
-        ];
-        const config = types[Math.floor(Math.random() * types.length)];
-        this.items.push({
-            x: Math.random() * (this.game.canvas.width - 30),
-            y: -30,
-            width: 30,
-            height: 30,
-            speed: 3 + Math.random() * 2,
-            ...config
-        });
+    handleInput() {
+        const hitIndex = this.targets.findIndex(t => t.y > this.game.canvas.height - 100 && t.y < this.game.canvas.height - 20);
+        if (hitIndex !== -1) { this.targets.splice(hitIndex, 1); this.integrity = Math.min(100, this.integrity + 5); }
+        else { this.integrity -= 5; }
     }
 
-    checkCollision(p, i) {
-        return p.x < i.x + i.width &&
-               p.x + p.width > i.x &&
-               p.y < i.y + i.height &&
-               p.y + p.height > i.y;
-    }
-
-    handleCollision(item) {
-        if (item.type === 'good') {
-            this.game.stats.discipline += item.value;
-            this.game.stats.strength += item.value;
+    end() {
+        if (this.integrity > 50) {
+            this.game.resultText = "Victory! The Phalanx held firm. Athens sees our strength and trembles. You are a true Homoios of Sparta.";
         } else {
-            this.game.stats.discipline += item.value;
-            this.game.stats.spirit -= 2;
+            this.game.resultText = "The line held, but barely. You must train harder in the Agoge.";
         }
-        this.game.updateStats();
+        this.game.setState('RESULT');
     }
 
     draw(ctx) {
-        // Draw Ground
-        ctx.fillStyle = '#3d2b1f';
-        ctx.fillRect(0, this.game.canvas.height - 40, this.game.canvas.width, 40);
-
-        // Draw Player (Placeholder for now)
-        ctx.fillStyle = '#8B0000';
-        ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
-        // Helmet plume
-        ctx.fillStyle = '#cc0000';
-        ctx.fillRect(this.player.x + 10, this.player.y - 10, 20, 10);
-
-        // Draw Items
-        this.items.forEach(item => {
-            ctx.fillStyle = item.color;
-            ctx.beginPath();
-            if (item.name === 'shield') {
-                ctx.arc(item.x + 15, item.y + 15, 15, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#FFD700';
-                ctx.stroke();
-            } else {
-                ctx.fillRect(item.x, item.y, item.width, item.height);
-            }
-        });
-
-        // Draw Timer
-        ctx.fillStyle = '#F5F5DC';
-        ctx.font = '20px Georgia';
-        ctx.fillText(`AGOGE TRAINING: ${Math.ceil((this.duration - this.elapsed) / 1000)}s`, 20, 40);
+        ctx.fillStyle = '#8B0000'; ctx.fillRect(0, ctx.canvas.height - 60, ctx.canvas.width, 60);
+        ctx.fillStyle = '#CD7F32';
+        for (let x = 20; x < ctx.canvas.width; x += 60) {
+            ctx.beginPath(); ctx.arc(x, ctx.canvas.height - 40, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        ctx.fillStyle = '#F5F5DC'; this.targets.forEach(t => { ctx.fillRect(ctx.canvas.width / 2 - 2, t.y, 4, 30); });
+        ctx.fillStyle = '#F5F5DC'; ctx.font = '20px Georgia';
+        ctx.fillText(`PHALANX INTEGRITY: ${this.integrity}%`, 20, 40);
+        ctx.fillText("SPACE TO HOLD THE LINE", ctx.canvas.width / 2 - 100, ctx.canvas.height - 80);
     }
 }
 
-// Initialize on load
 window.onload = () => {
     window.game = new Game();
-
-    // Global Key Listener for Phalanx
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && window.game.state === 'PHALANX' && window.game.phalanxGame) {
             window.game.phalanxGame.handleInput();
