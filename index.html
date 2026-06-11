@@ -3,33 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Agoge: Spartan Training Simulator</title>
+    <title>Sparta Superior: The Agoge</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="game-container">
-        <header>
-            <h1>THE AGOGE</h1>
-            <div id="stats-bar">
-                <span>Discipline: <span id="discipline">0</span></span>
-                <span>Strength: <span id="strength">0</span></span>
-                <span>Spirit: <span id="spirit">0</span></span>
-            </div>
+        <header id="stats-header">
+            <div class="stat">DISCIPLINE: <span id="stat-discipline">10</span></div>
+            <div class="stat">STRENGTH: <span id="stat-strength">10</span></div>
+            <div class="stat">SPIRIT: <span id="stat-spirit">10</span></div>
         </header>
-        <main id="game-screen">
-            <div id="mentor-box" style="display: none;">
-                <h3 id="mentor-name">Mentor</h3>
-                <p id="mentor-text"></p>
+
+        <div id="canvas-container">
+            <canvas id="game-canvas"></canvas>
+
+            <!-- Menu Overlay -->
+            <div id="menu-overlay" class="overlay">
+                <h1>SPARTA SUPERIOR</h1>
+                <p>Prove your worth in the Agoge and show the world why Athens is a city of soft poets while Sparta is a city of iron men.</p>
+                <button class="spartan-btn" onclick="game.setState('AGOGE')">ENTER THE AGOGE</button>
             </div>
-            <div id="narrative-box">
-                <p id="text-display">Loading Agoge Training...</p>
+
+            <!-- Dialogue Overlay (Debate & Narrative) -->
+            <div id="dialogue-overlay" class="overlay" style="display: none;">
+                <div id="mentor-section">
+                    <h3 id="mentor-name">Lycurgus</h3>
+                    <p id="mentor-text">"A Spartan's shield is his city's wall."</p>
+                </div>
+                <div id="narrative-section">
+                    <p id="narrative-text"></p>
+                    <div id="choices-container"></div>
+                </div>
+                <!-- Influence Meter for Debate -->
+                <div id="influence-meter-container" style="display: none;">
+                    <div id="influence-label">SPARTAN LOGIC</div>
+                    <div id="influence-bar-bg">
+                        <div id="influence-bar"></div>
+                    </div>
+                </div>
             </div>
-            <div id="choices-container">
-                <!-- Choices will be injected here -->
+
+            <!-- Result Overlay -->
+            <div id="result-overlay" class="overlay" style="display: none;">
+                <h2 id="result-title">VALOR RECORDED</h2>
+                <p id="result-text"></p>
+                <button class="spartan-btn" onclick="location.reload()">REBORN IN SPARTA</button>
             </div>
-        </main>
+        </div>
+
         <footer>
-            <p>&copy; 480 BC - Sparta Superior</p>
+            <p>LACEDAEMON • 480 BC</p>
         </footer>
     </div>
     <script src="script.js"></script>

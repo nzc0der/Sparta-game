@@ -1,11 +1,16 @@
-/* Spartan Crimson and Bronze Theme */
+/* Spartan High-Quality Theme */
 :root {
-    --spartan-crimson: #8B0000;
-    --spartan-bronze: #CD7F32;
-    --spartan-gold: #FFD700;
-    --ancient-parchment: #F5F5DC;
-    --black: #1a1a1a;
-    --dark-grey: #333;
+    --crimson: #8B0000;
+    --bronze: #CD7F32;
+    --gold: #FFD700;
+    --parchment: #F5F5DC;
+    --black: #0a0a0a;
+    --spartan-red: #cc0000;
+}
+
+@font-face {
+    font-family: 'Greek';
+    src: local('Georgia'), local('Times New Roman');
 }
 
 * {
@@ -16,134 +21,206 @@
 
 body {
     background-color: var(--black);
-    color: var(--ancient-parchment);
+    color: var(--parchment);
     font-family: 'Georgia', serif;
+    overflow: hidden; /* Game occupies full viewport */
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    padding: 10px;
+    height: 100vh;
 }
 
 #game-container {
-    width: 100%;
-    max-width: 700px;
-    border: 5px solid var(--spartan-bronze);
-    background-color: #2a0a0a;
-    padding: 25px;
-    box-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+    width: 100vw;
+    height: 100vh;
+    max-width: 1200px;
+    max-height: 800px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    border-radius: 4px;
+    border: 8px solid var(--bronze);
+    position: relative;
+    background-image: url('https://www.transparenttextures.com/patterns/papyrus.png'); /* Subtle texture */
 }
 
-header {
-    text-align: center;
-    border-bottom: 2px solid var(--spartan-bronze);
-    padding-bottom: 15px;
-}
-
-header h1 {
-    font-size: 2.5rem;
-    color: var(--spartan-gold);
-    letter-spacing: 5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px black;
-}
-
-#stats-bar {
+#stats-header {
+    height: 60px;
+    background: var(--crimson);
     display: flex;
     justify-content: space-around;
+    align-items: center;
+    border-bottom: 4px solid var(--bronze);
     font-weight: bold;
-    color: var(--spartan-bronze);
-    font-size: 0.9rem;
-    background: rgba(0,0,0,0.3);
-    padding: 5px;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    z-index: 10;
 }
 
-#stats-bar span {
-    border: 1px solid var(--spartan-bronze);
-    padding: 3px 10px;
-    border-radius: 3px;
+.stat {
+    color: var(--gold);
+    text-shadow: 1px 1px 2px black;
 }
 
-#game-screen {
-    min-height: 300px;
+#canvas-container {
+    flex-grow: 1;
+    position: relative;
+    background: #111;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.7);
+    padding: 40px;
+    text-align: center;
+    z-index: 5;
 }
 
-#mentor-box {
-    background: rgba(205, 127, 50, 0.15);
-    border: 1px solid var(--spartan-bronze);
-    padding: 10px;
-    margin-bottom: 15px;
-    font-style: italic;
+#menu-overlay h1 {
+    font-size: 4rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0px var(--crimson);
+    letter-spacing: 10px;
+}
+
+#menu-overlay p {
+    max-width: 600px;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.spartan-btn {
+    background: var(--crimson);
+    color: var(--gold);
+    border: 3px solid var(--bronze);
+    padding: 15px 40px;
+    font-size: 1.5rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 0 var(--black);
+}
+
+.spartan-btn:hover {
+    background: var(--spartan-red);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--black);
+}
+
+.spartan-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--black);
+}
+
+/* Dialogue & Debate Overlay */
+#dialogue-overlay {
+    justify-content: flex-end;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+}
+
+#mentor-section {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    text-align: left;
+    max-width: 300px;
+    background: rgba(139, 0, 0, 0.8);
+    padding: 15px;
+    border-left: 5px solid var(--gold);
 }
 
 #mentor-name {
-    color: var(--spartan-gold);
-    font-size: 0.9rem;
+    color: var(--gold);
     text-transform: uppercase;
+    font-size: 0.8rem;
     margin-bottom: 5px;
 }
 
-#narrative-box {
-    font-size: 1.1rem;
-    line-height: 1.6;
+#narrative-section {
+    background: rgba(245, 245, 220, 0.95);
+    color: var(--black);
+    width: 100%;
+    padding: 25px;
+    border: 4px solid var(--bronze);
+    border-radius: 5px;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+}
+
+#narrative-text {
+    font-size: 1.3rem;
     margin-bottom: 20px;
-    background: rgba(0,0,0,0.2);
-    padding: 15px;
-    border-left: 4px solid var(--spartan-crimson);
+    line-height: 1.4;
 }
 
 #choices-container {
-    display: grid;
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
 }
 
 .choice-btn {
-    background: var(--spartan-crimson);
-    color: white;
-    border: 2px solid var(--spartan-bronze);
-    padding: 12px 20px;
-    font-size: 1rem;
+    background: var(--black);
+    color: var(--parchment);
+    border: 2px solid var(--crimson);
+    padding: 10px 20px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
     font-family: inherit;
+    transition: background 0.2s;
 }
 
 .choice-btn:hover {
-    background: var(--spartan-bronze);
-    color: var(--black);
-    transform: scale(1.02);
+    background: var(--crimson);
+}
+
+/* Influence Meter */
+#influence-meter-container {
+    width: 80%;
+    margin-top: 20px;
+}
+
+#influence-bar-bg {
+    height: 20px;
+    background: #333;
+    border: 2px solid var(--bronze);
+    margin-top: 5px;
+}
+
+#influence-bar {
+    height: 100%;
+    width: 50%;
+    background: linear-gradient(to right, var(--crimson), var(--gold));
+    transition: width 0.5s ease-out;
 }
 
 footer {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #666;
-    border-top: 1px solid #444;
-    padding-top: 10px;
+    height: 30px;
+    background: var(--black);
+    color: #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 600px) {
-    header h1 {
-        font-size: 1.8rem;
-    }
-
-    #stats-bar {
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-    }
-
-    #game-container {
-        padding: 15px;
-    }
+    #menu-overlay h1 { font-size: 2rem; }
+    #stats-header { font-size: 0.7rem; }
+    #narrative-text { font-size: 1rem; }
 }
